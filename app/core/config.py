@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = Field(..., env='JWT_ALGORITHM')
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(..., env='ACCESS_TOKEN_EXPIRE_MINUTES')
     
+    TOKEN_URL: str = Field(..., env='TOKEN_URL')
+    
     class Config:
         env_file = '.env'
         env_file_encoding = 'utf-8'
