@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     
     TOKEN_URL: str = Field(..., env='TOKEN_URL')
     
+    INVITE_EXPIRY_DAYS: int = Field(..., env='INVITE_EXPIRY_DAYS')
+    
     class Config:
         env_file = '.env'
         env_file_encoding = 'utf-8'

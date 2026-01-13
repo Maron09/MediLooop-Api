@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Path
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +11,12 @@ from sqlalchemy import select
 from app.errors.errors import ErrorMessages
 from app.services.otp import OTPService
 from app.services.auth import AuthService
+from app.services.pharmacy import PharmacyService
+from app.services.invite import InviteService
+from app.models.user import User
+from app.models.pharmacy import Pharmacy
+from app.models.pharmacy_user import PharmacyUser
+from app.core.context import PharmacyContext
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl=settings.TOKEN_URL)
 
@@ -45,6 +51,34 @@ async def get_current_user(
     
     return user
 
+async def get_pharmacy_context(
+    pharmacy_id: str = Path(...),
+    user= Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> PharmacyContext:
+    result = await db.execute(
+        select(Pharmacy, PharmacyUser.role)
+        .join(PharmacyUser, PharmacyUser.pharmacy_id == Pharmacy.id)
+        .where(
+            Pharmacy.id == pharmacy_id,
+            PharmacyUser.user_id == user.id
+        )
+    )
+    row = result.first()
+    
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ErrorMessages.EER_PHARM_NOT_FOUND
+        )
+    pharmacy, role = row
+    
+    return PharmacyContext(
+        user=user,
+        pharmacy=pharmacy,
+        role=role
+    )
+
 async def get_otp_service(
     db: AsyncSession = Depends(get_db)
 ) -> OTPService:
@@ -54,3 +88,13 @@ async def get_auth_service(
     db: AsyncSession = Depends(get_db)
 ) -> AuthService:
     return AuthService(db)
+
+async def get_pharmacy_service(
+    db: AsyncSession = Depends(get_db)
+) -> PharmacyService:
+    return PharmacyService(db)
+
+async def get_invite_service(
+    db: AsyncSession = Depends(get_db)
+) -> InviteService:
+    return InviteService(db)
