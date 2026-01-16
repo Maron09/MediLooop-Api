@@ -5,7 +5,7 @@ from app.models.pharmacy_user import PharmacyRole
 
 
 
-@dataclass
+@dataclass(frozen=True)
 class PharmacyContext:
     user: User
     pharmacy: Pharmacy

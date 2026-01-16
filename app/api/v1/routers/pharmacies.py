@@ -8,7 +8,9 @@ from app.services.pharmacy import PharmacyService
 from app.services.invite import InviteService
 from app.messages.messages import Messages
 from app.errors.errors import ErrorMessages
-from app.api.permissions import can_invite
+from app.api.permissions import can_invite,require_owner, require_owner_or_staff, require_any_member
+from app.core.context import PharmacyContext
+
 
 router = APIRouter(prefix="/pharmacies", tags=["Pharmacies"])
 
@@ -22,12 +24,16 @@ async def create_pharmacy_endpoint(
     user=Depends(get_current_user)
 ):
     
-    pharmacy = await pharmacy_service.create_pharmacy(
+    try:
+        pharmacy = await pharmacy_service.create_pharmacy(
         name=payload.name,
         address=payload.address,
         owner_id=user.id
-    )
-    await db.commit()
+        )
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
     
     return PharmacyResponse(
         success=True,
@@ -61,24 +67,24 @@ async def list_my_pharmacies(
         data=data
     )
 
-@router.post("/{pharmacy_id}/invites", response_model=InviteResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/{pharmacy_id}/invites", response_model=InviteResponse, status_code=status.HTTP_201_CREATED )
 async def invite_user(
     payload: InviteCreate,
     db: AsyncSession = Depends(get_db),
-    ctx=Depends(get_pharmacy_context),
+    ctx: PharmacyContext = Depends(require_owner_or_staff),
     invite_service: InviteService = Depends(get_invite_service)
 ):
-    if not can_invite(ctx.role, payload.role):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=ErrorMessages.ERR_INVALID_ROLE
-        )
-    invite = await invite_service.create_invite(
+
+    try:
+        invite = await invite_service.create_invite(
         pharmacy_id=ctx.pharmacy.id,
         email=payload.email,
         role=payload.role
-    )
-    await db.commit()
+        )
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
     
     # TODO: send email with invite.token
     print(f"[INVITE] Token: {invite.token}")

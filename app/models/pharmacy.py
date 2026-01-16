@@ -20,3 +20,8 @@ class Pharmacy(BaseModel):
         back_populates="pharmacy",
         cascade="all, delete-orphan",
     )
+    
+    products: Mapped[list["Product"]] = relationship( # type: ignore
+        back_populates="pharmacy",
+        cascade="all, delete-orphan",
+    )

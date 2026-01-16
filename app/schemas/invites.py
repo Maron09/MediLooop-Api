@@ -11,3 +11,7 @@ class InviteCreate(BaseModel):
 class InviteResponse(BaseModel):
     success: bool
     message: str
+
+
+class InviteAccept(BaseModel):
+    token: str

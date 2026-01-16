@@ -1,9 +1,10 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.models.pharmacy_invite import PharmacyInvite
-from app.models.pharmacy_user import PharmacyRole
+from app.models.pharmacy_user import PharmacyRole, PharmacyUser
 
 from app.core.config import settings
 
@@ -38,3 +39,31 @@ class InviteService:
         await self.db.flush()
         
         return invite
+    
+    async def get_invite_by_token(
+        self,
+        token: str
+    ) -> PharmacyInvite:
+        result = await self.db.execute(
+            select(PharmacyInvite)
+            .where(PharmacyInvite.token == token)
+        )
+        return result.scalar_one_or_none()
+    
+    async def accept_invite(
+        self,
+        *,
+        invite: PharmacyInvite,
+        user_id,
+    ):
+        membership = PharmacyUser(
+            user_id=user_id,
+            pharmacy_id=invite.pharmacy_id,
+            role=invite.role
+        )
+        self.db.add(membership)
+        
+        invite.accepted = True
+        invite.updated_at = datetime.now(timezone.utc)
+        
+        await self.db.flush()

@@ -6,3 +6,9 @@ class Messages:
     PHARMACY_CREATED = "Pharmacy created successfully"
     
     INVITE_SENT = "Invitation sent"
+    
+    INVITE_ACCEPTED = "Invite Accepted"
+    
+    PRODUCT_CREATED = "Product created successfully"
+    PRODUCT_UPDATED = "Product updated successfully"
+    PRODUCT_DELETED = "Product deleted successfully"
